@@ -1,7 +1,8 @@
 // app.js — Atelier Piano : playback MIDI + entraînement avec retour visuel + transcription audio→MIDI.
 
 import { serializeMidi, parseMidi } from './midi.js';
-import { BUILTIN_PIECES, buildBuiltinPiece, buildExercise, buildRandomMelody, parseNotation } from './pieces.js';
+import { BUILTIN_PIECES, buildBuiltinPiece, buildExercise, buildRandomMelody, parseNotation,
+  SCALE_NAMES, CHORD_NAMES, PROGRESSION_NAMES, buildChordPiece, buildProgressionPiece } from './pieces.js';
 import { PianoSynth } from './synth.js';
 import { renderKeyboard } from './keyboard.js';
 import { initMidiInput } from './midiInput.js';
@@ -318,6 +319,7 @@ async function toggleRecord() {
   } else {
     const blob = await state.recorder.stop();
     state.recording = false;
+    $('rangeRow').classList.add('hidden');
     $('btnRecord').textContent = '🎙 Enregistrer';
     setStatus(`Audio capturé (${(blob.size / 1e6).toFixed(1)} Mo). Lancez la transcription.`);
     state.lastBlob = blob;
@@ -470,6 +472,29 @@ function wire() {
   $('btnGenArpeges').addEventListener('click', () => generate('Arpèges'));
   $('btnGenRandom').addEventListener('click', () => generate('Aléatoire'));
   $('btnImportNotation').addEventListener('click', importNotation);
+
+  for (const n of SCALE_NAMES) $('jbScale').append(new Option(n, n));
+  for (const n of CHORD_NAMES) $('jbChord').append(new Option(n, n));
+  for (const n of PROGRESSION_NAMES) $('jbProg').append(new Option(n, n));
+  $('btnJbScale').addEventListener('click', () => {
+    try {
+      const p = buildExercise({ type: 'Gammes', key: $('jbRoot').value, mode: $('jbScale').value, bpm: 90 });
+      setPiece({ name: `Gamme ${$('jbScale').value} (${$('jbRoot').value})`, ...p, source: 'gammes & accords' });
+    } catch (e) { setStatus(e.message, 'err'); }
+  });
+  $('btnJbChord').addEventListener('click', async () => {
+    try {
+      const p = buildChordPiece({ root: $('jbRoot').value, type: $('jbChord').value, bpm: 90 });
+      setPiece({ name: `${$('jbRoot').value}${$('jbChord').value}`, ...p, source: 'gammes & accords' });
+      await play();
+    } catch (e) { setStatus(e.message, 'err'); }
+  });
+  $('btnJbProg').addEventListener('click', () => {
+    try {
+      const p = buildProgressionPiece($('jbProg').value, $('jbRoot').value, { bpm: 100 });
+      setPiece({ name: `${$('jbProg').value} (${$('jbRoot').value})`, ...p, source: 'gammes & accords' });
+    } catch (e) { setStatus(e.message, 'err'); }
+  });
   $('trStart').addEventListener('input', updateRangeLabel);
   $('trEnd').addEventListener('input', updateRangeLabel);
   $('btnRangeAll').addEventListener('click', () => {

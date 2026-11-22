@@ -37,18 +37,62 @@ export function buildBuiltinPiece(title) {
   return parseNotation(`tempo=${song.bpm}\n${song.voices.join('\n')}`);
 }
 
-const SCALES = {
+export const SCALES = {
   majeur: [0, 2, 4, 5, 7, 9, 11, 12],
   mineur: [0, 2, 3, 5, 7, 8, 10, 12],
   pentatonique: [0, 2, 4, 7, 9, 12],
+  blues: [0, 3, 5, 6, 7, 10, 12],
+  'blues majeur': [0, 2, 3, 5, 6, 9, 12],
+  dorien: [0, 2, 3, 5, 7, 9, 10, 12],
+  mixolydien: [0, 2, 4, 5, 7, 9, 10, 12],
+  'bebop dominant': [0, 2, 4, 5, 7, 9, 10, 11, 12],
+  'altérée (superlocrien)': [0, 1, 3, 4, 6, 8, 10, 12],
+  'lydien dominant': [0, 2, 4, 6, 7, 9, 10, 12],
+  'ton entier': [0, 2, 4, 6, 8, 10, 12],
+  'diminuée (h-ton)': [0, 1, 3, 4, 6, 7, 9, 10, 12],
 };
 
-const DEGREES = { 'Do': 0, 'Ré': 2, 'Mi': 4, 'Fa': 5, 'Sol': 7, 'La': 9, 'Si': 11 };
+export const SCALE_NAMES = Object.keys(SCALES);
+
+export const CHORD_TYPES = {
+  'maj7': [0, 4, 7, 11],
+  '7': [0, 4, 7, 10],
+  'm7': [0, 3, 7, 10],
+  'm7b5': [0, 3, 6, 10],
+  'dim7': [0, 3, 6, 9],
+  '6': [0, 4, 7, 9],
+  'm6': [0, 3, 7, 9],
+  '9': [0, 4, 7, 10, 14],
+  'maj9': [0, 4, 7, 11, 14],
+  'm9': [0, 3, 7, 10, 14],
+  '13': [0, 4, 7, 10, 21],
+  '7sus4': [0, 5, 7, 10],
+  '7#9': [0, 4, 7, 10, 15],
+  '7b9': [0, 4, 7, 10, 13],
+  'aug7': [0, 4, 8, 10],
+};
+export const CHORD_NAMES = Object.keys(CHORD_TYPES).filter((k) => CHORD_TYPES[k]);
+
+export const PROGRESSION_NAMES = [
+  'Blues 12 mesures',
+  'Blues mineur 12 mesures',
+  'ii-V-I (12 tonalités)',
+  'Turnaround I-vi-ii-V',
+];
+
+const DEGREES = {
+  'Do': 0, 'Do#': 1, 'Réb': 1, 'Ré': 2, 'Mib': 3, 'Mi': 4, 'Fa': 5,
+  'Fa#': 6, 'Solb': 6, 'Sol': 7, 'Lab': 8, 'La': 9, 'Sib': 10, 'Si': 11,
+};
+
+function nami(m) {
+  const N = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return `${N[m % 12]}${Math.floor(m / 12) - 1}`;
+}
 
 export function buildExercise({ type, key = 'Do', mode = 'majeur', bpm = 80 }) {
-  const names = Object.keys(DEGREES);
-  const k = names.indexOf(key);
-  if (k < 0) throw new Error(`Tonalité inconnue: ${key}`);
+  if (!(mode in SCALES)) throw new Error(`Gamme inconnue: ${mode}`);
+  if (!(key in DEGREES)) throw new Error(`Tonalité inconnue: ${key}`);
   const base = 12 * 4 + DEGREES[key]; // octave 4
   const ivals = SCALES[mode];
   const tokens = [];
@@ -56,18 +100,72 @@ export function buildExercise({ type, key = 'Do', mode = 'majeur', bpm = 80 }) {
     for (const i of ivals) tokens.push(`${nami(base + i)}:1`);
     for (let j = ivals.length - 2; j >= 0; j--) tokens.push(`${nami(base + ivals[j])}:1`);
   } else if (type === 'Arpèges') {
-    const triad = mode === 'pentatonique' ? [0, 4, 9, 12, 16, 21] : [0, 4, 7, 12, 16, 19];
-    for (const i of triad) tokens.push(`${nami(base + i)}:1`);
-    for (let j = triad.length - 2; j >= 0; j--) tokens.push(`${nami(base + triad[j])}:1`);
+    const d = ivals.filter((x) => x < 12);
+    let seq;
+    if (d.length >= 7) {
+      seq = [d[0], d[2], d[4], d[6], d[0] + 12, d[2] + 12, d[4] + 12, d[6] + 12, d[4] + 12, d[2] + 12, d[0] + 12, d[6], d[4], d[2], d[0]];
+    } else {
+      const fifth = d[4] ?? d[0] + 12;
+      seq = [d[0], d[2], fifth, d[0] + 12, d[2] + 12, fifth + 12, fifth, d[2], d[0]];
+    }
+    for (const i of seq) tokens.push(`${nami(base + i)}:1`);
   } else {
     throw new Error(`Exercice inconnu: ${type}`);
   }
   return parseNotation(`tempo=${bpm}\n${tokens.join(' ')}`);
 }
 
-function nami(m) {
-  const N = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  return `${N[m % 12]}${Math.floor(m / 12) - 1}`;
+export function buildChordPiece({ root = 'Do', type = '7', bpm = 90 } = {}) {
+  if (!(type in CHORD_TYPES)) throw new Error(`Accord inconnu: ${type}`);
+  if (!(root in DEGREES)) throw new Error(`Tonalité inconnue: ${root}`);
+  const base = 48 + DEGREES[root]; // octave 3
+  const ivs = CHORD_TYPES[type];
+  const spb = 60 / bpm;
+  const notes = [];
+  const push = (m, beat, dur, vel = 82) => {
+    if (m >= 21 && m <= 108) notes.push({ m, start: beat * spb, dur: dur * spb, vel });
+  };
+  for (const iv of ivs) push(base + iv, 0, 2);
+  let t = 2.2;
+  for (const iv of ivs) { push(base + iv, t, 0.7); t += 0.75; }
+  for (let j = ivs.length - 2; j >= 0; j--) { push(base + ivs[j], t, 0.7); t += 0.75; }
+  const end = t + 0.4;
+  for (const iv of ivs) push(base + iv, end, 2);
+  const duration = notes.reduce((d, n) => Math.max(d, n.start + n.dur), 0);
+  notes.sort((a, b) => a.start - b.start || a.m - b.m);
+  return { bpm, duration, notes };
+}
+
+export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100 } = {}) {
+  if (!PROGRESSION_NAMES.includes(progression)) throw new Error(`Progression inconnue: ${progression}`);
+  if (!(rootName in DEGREES)) throw new Error(`Tonalité inconnue: ${rootName}`);
+  const base = 48 + DEGREES[rootName];
+  let specs; // [offset, type, beats]
+  if (progression === 'Blues 12 mesures') {
+    specs = [[0,'7',4],[0,'7',4],[0,'7',4],[0,'7',4],[5,'7',4],[5,'7',4],[0,'7',4],[0,'7',4],[7,'7',4],[5,'7',4],[0,'7',4],[7,'7',4]];
+  } else if (progression === 'Blues mineur 12 mesures') {
+    specs = [[0,'m7',4],[0,'m7',4],[0,'m7',4],[0,'m7',4],[5,'m7',4],[5,'m7',4],[0,'m7',4],[0,'m7',4],[8,'7#9',4],[7,'7',4],[0,'m7',4],[7,'7',4]];
+  } else if (progression === 'ii-V-I (12 tonalités)') {
+    specs = [];
+    for (const t of [0, 5, 10, 3, 8, 1, 6, 11, 4, 9, 2, 7]) {
+      specs.push([t + 2, 'm7', 2], [t + 7, '7', 2], [t, 'maj7', 2]);
+    }
+  } else {
+    specs = [[0, 'maj7', 2], [9, 'm7', 2], [2, 'm7', 2], [7, '7', 2]];
+  }
+  const spb = 60 / bpm;
+  const notes = [];
+  let beat = 0;
+  for (const [d, type, beats] of specs) {
+    for (const iv of CHORD_TYPES[type]) {
+      const m = base + d + iv;
+      if (m >= 21 && m <= 108) notes.push({ m, start: beat * spb, dur: beats * spb * 0.96, vel: 80 });
+    }
+    beat += beats;
+  }
+  notes.sort((a, b) => a.start - b.start || a.m - b.m);
+  const duration = notes.reduce((d2, n) => Math.max(d2, n.start + n.dur), 0);
+  return { bpm, duration, notes };
 }
 
 let rngState = 1;

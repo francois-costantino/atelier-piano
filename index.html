@@ -121,7 +121,35 @@
       <button id="btnGenArpeges">Arpèges</button>
       <button id="btnGenRandom">Mélodie aléatoire</button>
     </div>
-    <details>
+  <section>
+    <h2>4 · Jazz &amp; blues</h2>
+    <div class="row">
+      <select id="jbRoot">
+        <option>Do</option><option>Do#</option><option>Réb</option><option>Ré</option><option>Mib</option>
+        <option>Mi</option><option>Fa</option><option>Fa#</option><option>Solb</option><option>Sol</option>
+        <option>Lab</option><option>La</option><option>Sib</option><option>Si</option>
+      </select>
+      <select id="jbScale"></select>
+      <button id="btnJbScale">Jouer la gamme</button>
+    </div>
+    <div class="row">
+      <span class="muted">Accord :</span>
+      <select id="jbChord"></select>
+      <button id="btnJbChord" class="primary">Entendre l'accord</button>
+    </div>
+    <div class="row">
+      <span class="muted">Progression :</span>
+      <select id="jbProg"></select>
+      <button id="btnJbProg">Charger la progression</button>
+    </div>
+    <p class="muted">
+      L'accord se joue en bloc puis en arpège — entraînez-vous à retrouver chaque note.
+      Progressions : blues 12 mesures (I7-IV7-V7), blues mineur (i7-iv7-bVI7alt-V7),
+      ii-V-I dans les 12 tonalités (cycle des quintes), turnaround I-vi-ii-V.
+    </p>
+  </section>
+
+  <details>
       <summary>Coller une notation de morceau (je peux vous générer des morceaux à coller ici)</summary>
       <p class="muted">
         Demandez-moi (Vibe) un nouveau morceau : je vous répondrai avec du texte à coller ici.

@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { serializeMidi, parseMidi, parseNoteName } from '../midi.js';
-import { parseNotation, buildBuiltinPiece, BUILTIN_PIECES, buildExercise, buildRandomMelody } from '../pieces.js';
+import { parseNotation, buildBuiltinPiece, BUILTIN_PIECES, buildExercise, buildRandomMelody,
+  SCALE_NAMES, CHORD_NAMES, buildChordPiece, buildProgressionPiece, PROGRESSION_NAMES } from '../pieces.js';
 
 test('parseNoteName', () => {
   assert.equal(parseNoteName('C4'), 60);
@@ -72,4 +73,44 @@ test('exercices et mélodie aléatoire', () => {
   }
   const r = buildRandomMelody();
   assert.ok(r.notes.length > 0);
+});
+
+test('gammes jazz et blues dans toutes les tonalités', () => {
+  for (const mode of SCALE_NAMES) {
+    for (const key of ['Do', 'Sib', 'Fa#']) {
+      const g = buildExercise({ type: 'Gammes', key, mode, bpm: 90 });
+      assert.ok(g.notes.length >= 10, `${mode}/${key}`);
+      const a = buildExercise({ type: 'Arpèges', key, mode, bpm: 90 });
+      assert.ok(a.notes.length >= 7, `arpège ${mode}/${key}`);
+      for (const n of [...g.notes, ...a.notes]) assert.ok(n.m >= 21 && n.m <= 108, `${mode}/${key}: ${n.m}`);
+    }
+  }
+});
+
+test('accords jazz : bloc, arpège, registre', () => {
+  for (const type of CHORD_NAMES) {
+    const p = buildChordPiece({ root: 'Sib', type, bpm: 90 });
+    const block = p.notes.filter((n) => n.start === 0);
+    assert.ok(block.length >= 4, type);
+    assert.equal(new Set(block.map((n) => n.start)).size, 1); // notes simultanées
+    for (const n of p.notes) assert.ok(n.m >= 21 && n.m <= 108, `${type}: ${n.m}`);
+  }
+});
+
+test('progressions jazz/blues', () => {
+  const blues = buildProgressionPiece('Blues 12 mesures', 'Do', { bpm: 100 });
+  assert.ok(blues.duration > 27 && blues.duration < 29); // 12 mesures × 4 temps × 0,6 s
+  const minor = buildProgressionPiece('Blues mineur 12 mesures', 'La', { bpm: 100 });
+  assert.ok(minor.notes.length >= 48);
+  const iivi = buildProgressionPiece('ii-V-I (12 tonalités)', 'Do', { bpm: 120 });
+  assert.ok(iivi.notes.length >= 144);
+  assert.ok(iivi.duration > 30); // 72 temps à 120 bpm ≈ 36 s
+  const tr = buildProgressionPiece('Turnaround I-vi-ii-V', 'Fa', { bpm: 100 });
+  assert.equal(tr.notes.length, 16);
+  for (const name of PROGRESSION_NAMES) {
+    for (const root of ['Do', 'Sib']) {
+      const p = buildProgressionPiece(name, root, { bpm: 100 });
+      for (const n of p.notes) assert.ok(n.m >= 21 && n.m <= 108, `${name}/${root}: ${n.m}`);
+    }
+  }
 });
