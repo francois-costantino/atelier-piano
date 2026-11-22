@@ -1,0 +1,11 @@
+{
+  "name": "atelier-piano",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PWA de piano : transcription audio→MIDI (Basic Pitch), playback avec clavier, apprentissage avec retour MIDI vert/rouge.",
+  "scripts": {
+    "test": "node --test tests/",
+    "icons": "node gen-icons.js"
+  }
+}

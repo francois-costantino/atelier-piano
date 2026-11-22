@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Atelier Piano</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Atelier Piano">
+  <meta name="theme-color" content="#12131a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🎹 Atelier Piano</h1>
+    <span id="pieceName">—</span>
+  </header>
+
+  <div id="midiBanner" class="banner hidden">
+    ⚠️ Ce navigateur ne supporte pas Web MIDI.<br>
+    Sur iPad : installez l'app gratuite <strong>MIDIWeb Browser</strong> (App Store), puis ouvrez l'URL de cette page dedans —
+    le branchement de votre piano (USB ou Bluetooth) fonctionnera. Sur ordinateur, utilisez Chrome ou Edge.
+  </div>
+
+  <section id="transport">
+    <div class="row">
+      <button id="btnPlay" class="primary">▶ Lecture</button>
+      <button id="btnStop">⏹</button>
+      <span id="timeLabel" class="muted">0:00 / 0:00</span>
+      <span id="scoreLine" class="muted">—</span>
+    </div>
+    <input id="progress" type="range" min="0" max="1000" value="0">
+    <div class="row">
+      <label>Vitesse <input id="tempo" type="range" min="25" max="150" value="100"> <span id="tempoVal">100 %</span></label>
+      <div id="pieceActions" class="row hidden">
+        <input id="saveName" type="text" placeholder="Nom du morceau...">
+        <button id="btnSave" class="primary">💾 Sauvegarder</button>
+        <button id="btnDownload">⬇ .mid</button>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <h2>Morceau</h2>
+    <div id="kbSong" class="kb"></div>
+
+    <h2>Vous <span class="legend"><i class="dot green"></i> juste <i class="dot red"></i> faux</span></h2>
+    <div id="kbUser" class="kb"></div>
+    <p id="midiStatus" class="muted">MIDI : initialisation…</p>
+    <div class="row hidden" id="midiDeviceRow">
+      <select id="midiDevice" class="hidden"></select>
+    </div>
+  </main>
+
+  <section>
+    <h2>1 · Transcrire un morceau (audio → MIDI)</h2>
+    <p class="muted">
+      Spotify chiffre son son (DRM) : aucun navigateur ne peut le capter. À la place, enregistrez le morceau
+      avec le micro (iPad près des haut-parleurs du PC) ou importez un fichier audio (mp3, m4a, wav…).
+      La transcription utilise Basic Pitch (IA de Spotify), entièrement sur votre appareil.
+    </p>
+    <div class="row">
+      <button id="btnRecord">🎙 Enregistrer</button>
+      <input id="fileInput" type="file" accept="audio/*">
+      <button id="btnTranscribe" class="primary">✨ Transcrire → MIDI</button>
+    </div>
+    <p id="status"></p>
+  </section>
+
+  <section>
+    <h2>2 · Bibliothèque</h2>
+    <div id="library"></div>
+  </section>
+
+  <section>
+    <h2>3 · Morceaux intégrés &amp; exercices</h2>
+    <div class="row">
+      <select id="builtinSelect"></select>
+      <button id="btnLoadBuiltin">Charger</button>
+    </div>
+    <div class="row">
+      <select id="genKey">
+        <option>Do</option><option>Ré</option><option>Mi</option><option>Fa</option>
+        <option>Sol</option><option>La</option><option>Si</option>
+      </select>
+      <input id="genBpm" type="number" min="40" max="200" value="80" style="width:5em">
+      <button id="btnGenGammes">Gammes</button>
+      <button id="btnGenArpeges">Arpèges</button>
+      <button id="btnGenRandom">Mélodie aléatoire</button>
+    </div>
+    <details>
+      <summary>Coller une notation de morceau (je peux vous générer des morceaux à coller ici)</summary>
+      <p class="muted">
+        Demandez-moi (Vibe) un nouveau morceau : je vous répondrai avec du texte à coller ici.
+        Format : <code>tempo=90</code> puis une ligne par voix. Notes : <code>C4</code>…<code>B6</code>, <code>#</code>/<code>b</code>,
+        durée en temps après <code>:</code> (ex. <code>E5:.5</code> = croche), <code>r:1</code> = silence, <code>|</code> = séparateur.
+      </p>
+      <textarea id="notation" rows="4" placeholder="tempo=90&#10;C4:1 D4:1 E4:1 | r:1"></textarea>
+      <div class="row"><button id="btnImportNotation" class="primary">Importer la notation</button></div>
+    </details>
+  </section>
+
+  <footer class="muted">
+    Installable sur l'écran d'accueil : bouton Partager → « Sur l'écran d'accueil » (Safari iPad).
+  </footer>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
