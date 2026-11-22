@@ -73,6 +73,15 @@ export const CHORD_TYPES = {
 };
 export const CHORD_NAMES = Object.keys(CHORD_TYPES).filter((k) => CHORD_TYPES[k]);
 
+const ROOTLESS_VOICINGS = {
+  'maj7': [4, 11, 14, 19], '7': [4, 10, 14, 19], 'm7': [3, 10, 14, 19],
+  'm7b5': [3, 6, 10, 14], '9': [4, 10, 14, 19], 'm9': [3, 10, 14, 19], '13': [4, 10, 14, 21],
+};
+export function voicingOf(type, rootless = false) {
+  if (!rootless) return CHORD_TYPES[type];
+  return ROOTLESS_VOICINGS[type] ?? CHORD_TYPES[type].filter((i) => i > 0);
+}
+
 export const PROGRESSION_NAMES = [
   'Blues 12 mesures',
   'Blues rapide (changement immédiat)',
@@ -90,6 +99,13 @@ export const PROGRESSION_NAMES = [
   'Vamp dorien (So What)',
   'Cycle chromatique (Giant Steps)',
   'Blue Bossa (grille)',
+  'Anatole (I-VI7-II7-V7)',
+  'Années 50 (I-vi-IV-V)',
+  'Cycle complet I-IV-VII-III-VI-II-V-I',
+  'ii-V-I avec modulations (tierces)',
+  'Autumn Leaves (grille)',
+  'Fly Me to the Moon (grille)',
+  'I Got Rhythm (AABA)',
 ];
 
 const DEGREES = {
@@ -127,11 +143,11 @@ export function buildExercise({ type, key = 'Do', mode = 'majeur', bpm = 80 }) {
   return parseNotation(`tempo=${bpm}\n${tokens.join(' ')}`);
 }
 
-export function buildChordPiece({ root = 'Do', type = '7', bpm = 90 } = {}) {
+export function buildChordPiece({ root = 'Do', type = '7', bpm = 90, rootless = false } = {}) {
   if (!(type in CHORD_TYPES)) throw new Error(`Accord inconnu: ${type}`);
   if (!(root in DEGREES)) throw new Error(`Tonalité inconnue: ${root}`);
   const base = 48 + DEGREES[root]; // octave 3
-  const ivs = CHORD_TYPES[type];
+  const ivs = voicingOf(type, rootless);
   const spb = 60 / bpm;
   const notes = [];
   const push = (m, beat, dur, vel = 82) => {
@@ -148,7 +164,7 @@ export function buildChordPiece({ root = 'Do', type = '7', bpm = 90 } = {}) {
   return { bpm, duration, notes };
 }
 
-export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100 } = {}) {
+export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100, rootless = false } = {}) {
   if (!PROGRESSION_NAMES.includes(progression)) throw new Error(`Progression inconnue: ${progression}`);
   if (!(rootName in DEGREES)) throw new Error(`Tonalité inconnue: ${rootName}`);
   const base = 48 + DEGREES[rootName];
@@ -190,6 +206,24 @@ export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100 
     specs = [[0,'maj7',4],[3,'7',2],[8,'maj7',2],[10,'7',4],[3,'maj7',4],[7,'m7',2],[0,'7',2],[8,'maj7',4]];
   } else if (progression === 'Blue Bossa (grille)') {
     specs = [[0,'m7',8],[5,'m7',8],[2,'m7b5',2],[7,'7',2],[0,'m7',8],[3,'m7',4],[8,'7',4],[1,'maj7',8],[2,'m7b5',2],[7,'7',2],[0,'m7',8]];
+  } else if (progression === 'Anatole (I-VI7-II7-V7)') {
+    specs = [[0,'7',2],[9,'7',2],[2,'7',2],[7,'7',2],[0,'7',2],[9,'7',2],[2,'7',2],[7,'7',2]];
+  } else if (progression === 'Années 50 (I-vi-IV-V)') {
+    specs = [[0,'maj7',2],[9,'m7',2],[5,'maj7',2],[7,'7',2],[0,'maj7',2],[9,'m7',2],[5,'maj7',2],[7,'7',2]];
+  } else if (progression === 'Cycle complet I-IV-VII-III-VI-II-V-I') {
+    specs = [[0,'maj7',4],[5,'7',4],[11,'7',4],[4,'7',4],[9,'7',4],[2,'7',4],[7,'7',4]];
+  } else if (progression === 'ii-V-I avec modulations (tierces)') {
+    specs = [];
+    for (const t of [0, 9, 6, 3, 0, 9, 6, 3]) specs.push([t + 2, 'm7', 2], [t + 7, '7', 2], [t, 'maj7', 2]);
+  } else if (progression === 'Autumn Leaves (grille)') {
+    specs = [[5,'m7',4],[10,'7',4],[3,'maj7',4],[8,'maj7',4],[2,'m7b5',2],[7,'7',2],[0,'m7',4],[5,'m7',2],[10,'7',2],[3,'maj7',4],[2,'m7b5',2],[7,'7',2],[0,'m7',8]];
+  } else if (progression === 'Fly Me to the Moon (grille)') {
+    specs = [[0,'m7',4],[5,'m7',4],[10,'7',4],[3,'maj7',4],[8,'maj7',4],[2,'m7b5',2],[7,'7',2],[0,'m7',4],[0,'m7',4],[5,'m7',4],[10,'7',4],[3,'maj7',4],[8,'maj7',4],[2,'m7b5',2],[7,'7',2],[0,'m7',8]];
+  } else if (progression === 'I Got Rhythm (AABA)') {
+    const A = [[0,'maj7',4],[9,'m6',4],[2,'m7',4],[7,'7',4],[0,'maj7',4],[9,'m6',4],[2,'m7',4],[7,'7',4]];
+    const B = [[4,'7',8],[9,'7',8],[2,'7',8],[7,'7',8]];
+    const REJ = [[0,'maj7',4],[9,'m6',4],[2,'m7',4],[7,'7',4],[2,'m7',4],[5,'7',4],[0,'maj7',8]];
+    specs = [...A, ...A, ...B, ...REJ];
   } else {
     specs = [[0, 'maj7', 2], [9, 'm7', 2], [2, 'm7', 2], [7, '7', 2]];
   }
@@ -197,7 +231,7 @@ export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100 
   const notes = [];
   let beat = 0;
   for (const [d, type, beats] of specs) {
-    for (const iv of CHORD_TYPES[type]) {
+    for (const iv of voicingOf(type, rootless)) {
       const m = base + d + iv;
       if (m >= 21 && m <= 108) notes.push({ m, start: beat * spb, dur: beats * spb * 0.96, vel: 80 });
     }

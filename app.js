@@ -484,14 +484,14 @@ function wire() {
   });
   $('btnJbChord').addEventListener('click', async () => {
     try {
-      const p = buildChordPiece({ root: $('jbRoot').value, type: $('jbChord').value, bpm: 90 });
+      const p = buildChordPiece({ root: $('jbRoot').value, type: $('jbChord').value, bpm: 90, rootless: $('jbRootless').checked });
       setPiece({ name: `${$('jbRoot').value}${$('jbChord').value}`, ...p, source: 'gammes & accords' });
       await play();
     } catch (e) { setStatus(e.message, 'err'); }
   });
   $('btnJbProg').addEventListener('click', () => {
     try {
-      const p = buildProgressionPiece($('jbProg').value, $('jbRoot').value, { bpm: 100 });
+      const p = buildProgressionPiece($('jbProg').value, $('jbRoot').value, { bpm: 100, rootless: $('jbRootless').checked });
       setPiece({ name: `${$('jbProg').value} (${$('jbRoot').value})`, ...p, source: 'gammes & accords' });
     } catch (e) { setStatus(e.message, 'err'); }
   });
