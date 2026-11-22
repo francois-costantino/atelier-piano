@@ -417,6 +417,20 @@ function wire() {
   $('fileInput').addEventListener('change', importFile);
   $('btnTranscribe').addEventListener('click', doTranscribe);
 
+  const dropZone = $('dropZone');
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer?.files?.[0];
+    if (!f) return;
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    $('fileInput').files = dt.files;
+    importFile();
+  });
+
   const selBuiltin = $('builtinSelect');
   for (const t of BUILTIN_PIECES) selBuiltin.append(new Option(t, t));
   $('btnLoadBuiltin').addEventListener('click', () => loadBuiltin(selBuiltin.value));

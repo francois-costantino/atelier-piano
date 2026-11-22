@@ -71,11 +71,12 @@
       avec le micro (iPad près des haut-parleurs du PC) ou importez un fichier audio (mp3, m4a, wav…).
       La transcription utilise Basic Pitch (IA de Spotify), entièrement sur votre appareil.
     </p>
-    <div class="row">
+    <div class="row" id="dropZone">
       <button id="btnRecord">🎙 Enregistrer</button>
-      <input id="fileInput" type="file" accept="audio/*">
+      <label class="file-label">📁 Importer un fichier (mp3, m4a, wav, flac…) <input id="fileInput" type="file" accept="audio/*"></label>
       <button id="btnTranscribe" class="primary">✨ Transcrire → MIDI</button>
     </div>
+    <p class="muted">Sur Mac, vous pouvez aussi glisser-déposer le mp3 n'importe où dans cette section. Sur iPad : « Importer un fichier » ouvre vos Fichiers/iCloud.</p>
     <details>
       <summary>⚙︎ Qualité de la transcription (harmoniques, sensibilité)</summary>
       <div class="row">

@@ -68,7 +68,19 @@ input[type="text"], input[type="file"], select, textarea {
   font-size: 0.95rem;
 }
 textarea { width: 100%; font-family: ui-monospace, monospace; }
-input[type="file"] { max-width: 240px; }
+input[type="file"] { max-width: 300px; }
+.file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #262936;
+  border: 1px dashed #4f7cff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+#dropZone.dragover { outline: 2px dashed var(--accent); outline-offset: 4px; }
 
 /* ------- claviers ------- */
 .kb {
