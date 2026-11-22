@@ -342,6 +342,7 @@ async function doTranscribe() {
     const result = await transcribeAudio(state.lastBlob, {
       onProgress: (p) => {
         if (p.phase === 'model') setStatus('Chargement du modèle Basic Pitch (première fois seulement)…');
+        else if (p.phase === 'backend') setStatus(`Moteur d'analyse : ${p.backend}${p.note ?? ''} — lancement…`);
         else if (p.phase === 'infer') setStatus(`Analyse audio… ${Math.round((p.pct ?? 0) * 100)} %`);
         else if (p.phase === 'notes') setStatus('Création des notes…');
       },

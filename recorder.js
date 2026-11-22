@@ -2,14 +2,52 @@
 // Modèle https://github.com/spotify/basic-pitch (Apache 2.0), chargé depuis le CDN jsDelivr au premier usage.
 
 const BP_VERSION = '1.0.1';
-const MODULE_URL = `https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@${BP_VERSION}/+esm`;
+const TF_VERSION = '3.21.0';
+// L'import-map de index.html redirige '@tensorflow/tfjs' et '@tonejs/midi'
+// vers le CDN : on charge le module ESM tel quel pour garder la MAIN sur
+// l'instance tfjs (sinon jsDelivr l'embarque et on ne peut pas changer de backend).
+const MODULE_URL = `https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@${BP_VERSION}/esm/index.js`;
+const MODULE_URL_BUNDLED = `https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@${BP_VERSION}/+esm`;
+const TFJS_URL = `https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/+esm`;
 const MODEL_URL = `https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@${BP_VERSION}/model/model.json`;
 
 let bpModule = null;
+let backendNote = '';
+
+function webglAvailable() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch { return false; }
+}
+
+// Essaie le backend WebGL (rapide) ; si le contexte ou le premier kernel
+// échoue, bascule sur CPU. Renvoie 'webgl' | 'cpu'.
+async function pickTfBackend() {
+  backendNote = '';
+  const tf = await import(TFJS_URL);
+  try {
+    await tf.setBackend('webgl');
+    await tf.ready();
+    if (webglAvailable()) {
+      tf.tidy(() => tf.conv2d(tf.zeros([1, 8, 8, 1]), tf.zeros([3, 3, 1, 1]), 1, 'same').dataSync());
+      return 'webgl';
+    }
+  } catch {}
+  backendNote = ' (backend CPU — transcription plus lente)';
+  await tf.setBackend('cpu');
+  await tf.ready();
+  return 'cpu';
+}
 
 async function loadBasicPitch() {
   if (!bpModule) {
-    const mod = await import(MODULE_URL);
+    let mod;
+    try {
+      mod = await import(MODULE_URL);
+    } catch {
+      mod = await import(MODULE_URL_BUNDLED);
+    }
     bpModule = {
       BasicPitch: mod.BasicPitch,
       outputToNotesPoly: mod.outputToNotesPoly,
@@ -61,6 +99,8 @@ export async function transcribeAudio(blob, { onProgress } = {}) {
 
   onProgress?.({ phase: 'model' });
   const bp = await loadBasicPitch();
+  const backend = await pickTfBackend();
+  onProgress?.({ phase: 'backend', backend, note: backendNote });
   const frames = [], onsets = [], contours = [];
   await bp.model.evaluateModel(
     mono22050,
