@@ -339,7 +339,14 @@ async function doTranscribe() {
   $('btnTranscribe').disabled = true;
   try {
     setStatus('Transcription en cours (10 à 60 s selon la durée)…');
+    const PRESETS = {
+      sensible: { onsetThresh: 0.5, frameThresh: 0.3, minNoteLen: 11 },
+      fin: { onsetThresh: 0.6, frameThresh: 0.4, minNoteLen: 14 },
+      souple: { onsetThresh: 0.35, frameThresh: 0.2, minNoteLen: 7 },
+    };
     const result = await transcribeAudio(state.lastBlob, {
+      ...PRESETS[$('trProfile').value],
+      removeHarmonics: $('trHarmonics').checked,
       onProgress: (p) => {
         if (p.phase === 'model') setStatus('Chargement du modèle Basic Pitch (première fois seulement)…');
         else if (p.phase === 'backend') setStatus(`Moteur d'analyse : ${p.backend}${p.note ?? ''} — lancement…`);

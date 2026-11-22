@@ -89,7 +89,17 @@ export function isRecordingSupported() {
   return !!(navigator.mediaDevices && window.MediaRecorder);
 }
 
-export async function transcribeAudio(blob, { onProgress } = {}) {
+export async function transcribeAudio(blob, { onProgress, ...opts } = {}) {
+  const settings = {
+    onsetThresh: 0.5,
+    frameThresh: 0.3,
+    minNoteLen: 11,        // en frames (~11,6 ms par frame) ≈ 128 ms
+    minFreq: 60,           // Hz — coupe le grondement et le souffle grave
+    maxFreq: 2100,         // Hz — coupe les harmoniques très aiguës
+    removeHarmonics: true, // notes fantômes (octave/quinte d'une note plus forte)
+    removeShort: true,     // éclats inférieurs à ~90 ms
+    ...opts,
+  };
   const arrayBuffer = await blob.arrayBuffer();
   const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
   const decoded = await decodeCtx.decodeAudioData(arrayBuffer.slice(0));
@@ -109,20 +119,51 @@ export async function transcribeAudio(blob, { onProgress } = {}) {
   );
 
   onProgress?.({ phase: 'notes' });
-  const noteEvents = bp.noteFramesToTime(bp.outputToNotesPoly(frames, onsets, 0.25, 0.25, 5));
+  const noteEvents = bp.noteFramesToTime(bp.outputToNotesPoly(
+    frames, onsets,
+    settings.onsetThresh, settings.frameThresh, settings.minNoteLen,
+    true, settings.maxFreq, settings.minFreq, true, 11,
+  ));
 
-  const notes = noteEvents
+  let notes = noteEvents
     .filter((ev) => ev.pitchMidi >= 21 && ev.pitchMidi <= 108 && ev.durationSeconds > 0.02)
     .map((ev) => ({
       m: ev.pitchMidi,
       start: ev.startTimeSeconds,
       dur: Math.max(0.08, ev.durationSeconds - 0.02),
       vel: Math.max(30, Math.min(112, Math.round(40 + 80 * (ev.amplitude ?? 0.6)))),
+      amp: ev.amplitude ?? 0.6,
     }))
     .sort((a, b) => a.start - b.start || a.m - b.m);
 
+  if (settings.removeShort) notes = removeShortNotes(notes);
+  if (settings.removeHarmonics) notes = removeHarmonicGhosts(notes);
+
   const duration = notes.reduce((d, n) => Math.max(d, n.start + n.dur), 0);
   return { bpm: guessBpm(notes), notes, duration, audioDuration: mono22050.duration };
+}
+
+function removeShortNotes(notes, minDur = 0.09) {
+  return notes.filter((n) => n.dur >= minDur);
+}
+
+// Une "harmonique fantôme" est une note plus faible démarrant presque en même
+// temps qu'une note plus forte, portée par elle (octave, quinte/suite des
+// harmoniques), et couverte par elle sur l'essentiel de sa durée.
+const HARMONIC_OFFSETS = new Set([12, 19, 24, 28, 31, 36]);
+
+function removeHarmonicGhosts(notes) {
+  const keep = [];
+  for (const n of notes) {
+    const host = notes.find((s) =>
+      s !== n
+      && (n.m - s.m === 12 || n.m - s.m === 19 || n.m - s.m === 24 || n.m - s.m === 28 || n.m - s.m === 31 || n.m - s.m === 36)
+      && s.amp > n.amp * 1.05
+      && s.start <= n.start + 0.08
+      && s.start + s.dur >= n.start + Math.min(n.dur * 0.6, 0.6));
+    if (!host) keep.push(n);
+  }
+  return keep;
 }
 
 function guessBpm(notes) {

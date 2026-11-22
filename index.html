@@ -76,6 +76,20 @@
       <input id="fileInput" type="file" accept="audio/*">
       <button id="btnTranscribe" class="primary">✨ Transcrire → MIDI</button>
     </div>
+    <details>
+      <summary>⚙︎ Qualité de la transcription (harmoniques, sensibilité)</summary>
+      <div class="row">
+        <label>Profil :
+          <select id="trProfile">
+            <option value="sensible" selected>Équilibré — par défaut</option>
+            <option value="fin">Précis — moins de fausses notes (peut en oublier)</option>
+            <option value="souple">Généreux — plus de notes (plus de bruit)</option>
+          </select>
+        </label>
+        <label><input id="trHarmonics" type="checkbox" checked> Dédoublonner les harmoniques fantômes</label>
+      </div>
+      <p class="muted">Piano seul de préférence. Harmoniques : supprime les notes fantômes à l'octave/quinte au-dessus d'une note plus forte tenue.</p>
+    </details>
     <p id="status"></p>
   </section>
 
