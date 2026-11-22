@@ -1,5 +1,5 @@
 // sw.js — cache hors-ligne pour Atelier Piano.
-const VERSION = 'atelier-piano-v4';
+const VERSION = 'atelier-piano-v5';
 const CORE = [
   './',
   './index.html',

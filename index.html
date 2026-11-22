@@ -77,6 +77,12 @@
       <button id="btnTranscribe" class="primary">✨ Transcrire → MIDI</button>
     </div>
     <p class="muted">Sur Mac, vous pouvez aussi glisser-déposer le mp3 n'importe où dans cette section. Sur iPad : « Importer un fichier » ouvre vos Fichiers/iCloud.</p>
+    <div class="row hidden" id="rangeRow">
+      <label>Début <input id="trStart" type="range" min="0" max="600" value="0" step="0.5"></label>
+      <label>Fin <input id="trEnd" type="range" min="0" max="600" value="600" step="0.5"></label>
+      <span id="trRangeLabel" class="muted">—</span>
+      <button id="btnRangeAll">Tout</button>
+    </div>
     <details>
       <summary>⚙︎ Qualité de la transcription (harmoniques, sensibilité)</summary>
       <div class="row">

@@ -328,7 +328,34 @@ function importFile() {
   const f = $('fileInput').files[0];
   if (!f) return setStatus("Choisissez d'abord un fichier audio.", 'err');
   state.lastBlob = f;
-  setStatus(`Fichier « ${f.name} » prêt. Lancez la transcription.`);
+  probeDuration(f);
+}
+
+function probeDuration(blobOrFile) {
+  const url = URL.createObjectURL(blobOrFile);
+  const probe = new Audio();
+  probe.preload = 'metadata';
+  probe.src = url;
+  probe.onloadedmetadata = () => {
+    URL.revokeObjectURL(url);
+    if (!isFinite(probe.duration) || !probe.duration) return;
+    const d = probe.duration;
+    const s = $('trStart'), e = $('trEnd');
+    s.max = d; e.max = d;
+    s.value = 0; e.value = d;
+    $('rangeRow').classList.remove('hidden');
+    updateRangeLabel(d);
+  };
+}
+
+function updateRangeLabel() {
+  if ($('rangeRow').classList.contains('hidden')) return;
+  const d = parseFloat($('trEnd').max);
+  const s = Math.min(parseFloat($('trStart').value), d);
+  const e = Math.max(parseFloat($('trEnd').value), s + 0.5);
+  $('trRangeLabel').textContent = s > 0.1 || e < d - 0.1
+    ? `plage ${fmt(s)} → ${fmt(e)} (${fmt(e - s)})`
+    : 'tout le fichier';
 }
 
 async function doTranscribe() {
@@ -344,9 +371,14 @@ async function doTranscribe() {
       fin: { onsetThresh: 0.6, frameThresh: 0.4, minNoteLen: 14 },
       souple: { onsetThresh: 0.35, frameThresh: 0.2, minNoteLen: 7 },
     };
+    const rangeVisible = !$('rangeRow').classList.contains('hidden');
+    const startSec = rangeVisible ? Math.max(0, parseFloat($('trStart').value) || 0) : 0;
+    const endRaw = rangeVisible ? parseFloat($('trEnd').value) : null;
+    const endSec = rangeVisible && endRaw < parseFloat($('trEnd').max) - 0.1 ? endRaw : null;
     const result = await transcribeAudio(state.lastBlob, {
       ...PRESETS[$('trProfile').value],
       removeHarmonics: $('trHarmonics').checked,
+      startSec, endSec,
       onProgress: (p) => {
         if (p.phase === 'model') setStatus('Chargement du modèle Basic Pitch (première fois seulement)…');
         else if (p.phase === 'backend') setStatus(`Moteur d'analyse : ${p.backend}${p.note ?? ''} — lancement…`);
@@ -359,7 +391,7 @@ async function doTranscribe() {
       return;
     }
     setPiece({ name, bpm: result.bpm, notes: result.notes, duration: result.duration, source: 'transcription' });
-    setStatus(`Transcription prête : ${result.notes.length} notes. Vérifiez, renommez, puis « Sauvegarder ».`);
+    setStatus(`Transcription prête : ${result.notes.length} notes${rangeVisible && (startSec > 0.1 || endSec) ? ` (plage ${fmt(startSec)} → ${fmt(endSec ?? result.audioDuration)})` : ''}. Vérifiez, renommez, puis « Sauvegarder ».`);
   } catch (e) {
     console.error(e);
     setStatus(`Échec de la transcription : ${e.message ?? e}. (Le modèle nécessite une connexion internet au premier usage.)`, 'err');
@@ -438,6 +470,14 @@ function wire() {
   $('btnGenArpeges').addEventListener('click', () => generate('Arpèges'));
   $('btnGenRandom').addEventListener('click', () => generate('Aléatoire'));
   $('btnImportNotation').addEventListener('click', importNotation);
+  $('trStart').addEventListener('input', updateRangeLabel);
+  $('trEnd').addEventListener('input', updateRangeLabel);
+  $('btnRangeAll').addEventListener('click', () => {
+    const d = parseFloat($('trEnd').max);
+    $('trStart').value = 0;
+    $('trEnd').value = d;
+    updateRangeLabel();
+  });
 
   for (const kb of [songKb, userKb]) {
     for (const [midi, el] of kb.keyEls) {

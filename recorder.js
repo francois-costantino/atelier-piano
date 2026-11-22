@@ -98,6 +98,8 @@ export async function transcribeAudio(blob, { onProgress, ...opts } = {}) {
     maxFreq: 2100,         // Hz — coupe les harmoniques très aiguës
     removeHarmonics: true, // notes fantômes (octave/quinte d'une note plus forte)
     removeShort: true,     // éclats inférieurs à ~90 ms
+    startSec: 0,           // plage à extraire (sélecteur de l'app)
+    endSec: null,
     ...opts,
   };
   const arrayBuffer = await blob.arrayBuffer();
@@ -105,7 +107,11 @@ export async function transcribeAudio(blob, { onProgress, ...opts } = {}) {
   const decoded = await decodeCtx.decodeAudioData(arrayBuffer.slice(0));
   await decodeCtx.close();
 
-  const mono22050 = await renderMono(decoded, 22050);
+  const mono22050 = await renderMono(decoded, 22050, { start: settings.startSec, end: settings.endSec });
+
+  if (mono22050.duration < 0.5) {
+    throw new Error(`La plage choisie est trop courte ou invalide (${mono22050.duration.toFixed(2)} s). Vérifiez Début/Fin.`);
+  }
 
   onProgress?.({ phase: 'model' });
   const bp = await loadBasicPitch();
@@ -180,13 +186,18 @@ function guessBpm(notes) {
   return Math.max(60, Math.min(180, bpm));
 }
 
-async function renderMono(buffer, sampleRate) {
-  if (buffer.sampleRate === sampleRate && buffer.numberOfChannels === 1) return buffer;
-  const len = Math.ceil(buffer.duration * sampleRate);
+async function renderMono(buffer, sampleRate, { start = 0, end = null } = {}) {
+  const from = Math.max(0, Math.min(start ?? 0, buffer.duration - 0.05));
+  const to = Math.min(end == null ? buffer.duration : end, buffer.duration);
+  const dur = to - from;
+  if (dur <= 0.05) throw new Error('Plage invalide : la fin doit être après le début');
+  const full = from <= 0.001 && dur >= buffer.duration - 0.01;
+  if (full && buffer.sampleRate === sampleRate && buffer.numberOfChannels === 1) return buffer;
+  const len = Math.ceil(dur * sampleRate);
   const off = new OfflineAudioContext(1, len, sampleRate);
   const src = off.createBufferSource();
   src.buffer = buffer;
   src.connect(off.destination);
-  src.start();
+  src.start(0, from, dur);
   return off.startRendering();
 }
