@@ -75,9 +75,21 @@ export const CHORD_NAMES = Object.keys(CHORD_TYPES).filter((k) => CHORD_TYPES[k]
 
 export const PROGRESSION_NAMES = [
   'Blues 12 mesures',
+  'Blues rapide (changement immédiat)',
+  'Blues 8 mesures',
   'Blues mineur 12 mesures',
   'ii-V-I (12 tonalités)',
+  'ii-V-I (montée chromatique)',
+  'ii-V-i mineur (12 tonalités)',
   'Turnaround I-vi-ii-V',
+  'Turnaround (dominantes) I-VI7-ii7-V7',
+  'Rhythm changes (section A)',
+  'Pont rhythm changes (dominantes en cycle)',
+  'Chaîne de ii-V (Satin Doll)',
+  'Backdoor ii-V (bVII7 → I)',
+  'Vamp dorien (So What)',
+  'Cycle chromatique (Giant Steps)',
+  'Blue Bossa (grille)',
 ];
 
 const DEGREES = {
@@ -150,6 +162,34 @@ export function buildProgressionPiece(progression, rootName = 'Do', { bpm = 100 
     for (const t of [0, 5, 10, 3, 8, 1, 6, 11, 4, 9, 2, 7]) {
       specs.push([t + 2, 'm7', 2], [t + 7, '7', 2], [t, 'maj7', 2]);
     }
+  } else if (progression === 'Blues rapide (changement immédiat)') {
+    specs = [[0,'7',2],[5,'7',2],[0,'7',2],[0,'7',2],[5,'7',2],[5,'7',2],[0,'7',2],[0,'7',2],[7,'7',2],[5,'7',2],[0,'7',2],[7,'7',2]];
+  } else if (progression === 'Blues 8 mesures') {
+    specs = [[0,'7',4],[7,'7',4],[5,'7',4],[5,'7',4],[0,'7',4],[7,'7',4],[0,'7',4],[7,'7',4]];
+  } else if (progression === 'ii-V-I (montée chromatique)') {
+    specs = [];
+    for (let t = 0; t < 12; t++) specs.push([t + 2, 'm7', 2], [t + 7, '7', 2], [t, 'maj7', 2]);
+  } else if (progression === 'ii-V-i mineur (12 tonalités)') {
+    specs = [];
+    for (const t of [0, 5, 10, 3, 8, 1, 6, 11, 4, 9, 2, 7]) {
+      specs.push([t + 2, 'm7b5', 2], [t + 7, '7', 2], [t, 'm7', 2]);
+    }
+  } else if (progression === 'Turnaround (dominantes) I-VI7-ii7-V7') {
+    specs = [[0,'7',2],[9,'7',2],[2,'m7',2],[7,'7',2],[0,'7',2],[9,'7',2],[2,'m7',2],[7,'7',2]];
+  } else if (progression === 'Rhythm changes (section A)') {
+    specs = [[0,'maj7',2],[9,'m6',2],[2,'m7',2],[7,'7',2],[0,'maj7',2],[9,'m6',2],[2,'m7',2],[7,'7',2]];
+  } else if (progression === 'Pont rhythm changes (dominantes en cycle)') {
+    specs = [[4,'7',4],[9,'7',4],[2,'7',4],[7,'7',4],[4,'7',4],[9,'7',4],[2,'7',4],[7,'7',4]];
+  } else if (progression === 'Chaîne de ii-V (Satin Doll)') {
+    specs = [[2,'m7',2],[7,'7',2],[4,'m7',2],[9,'7',2],[2,'m7',2],[7,'7',2],[0,'maj7',4]];
+  } else if (progression === 'Backdoor ii-V (bVII7 → I)') {
+    specs = [[5,'m7',2],[10,'7',2],[0,'maj7',2],[5,'m7',2],[10,'7',2],[0,'maj7',2]];
+  } else if (progression === 'Vamp dorien (So What)') {
+    specs = [[0,'m7',8],[1,'m7',8],[0,'m7',8],[1,'m7',8]];
+  } else if (progression === 'Cycle chromatique (Giant Steps)') {
+    specs = [[0,'maj7',4],[3,'7',2],[8,'maj7',2],[10,'7',4],[3,'maj7',4],[7,'m7',2],[0,'7',2],[8,'maj7',4]];
+  } else if (progression === 'Blue Bossa (grille)') {
+    specs = [[0,'m7',8],[5,'m7',8],[2,'m7b5',2],[7,'7',2],[0,'m7',8],[3,'m7',4],[8,'7',4],[1,'maj7',8],[2,'m7b5',2],[7,'7',2],[0,'m7',8]];
   } else {
     specs = [[0, 'maj7', 2], [9, 'm7', 2], [2, 'm7', 2], [7, '7', 2]];
   }
