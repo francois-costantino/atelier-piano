@@ -112,17 +112,17 @@ export async function transcribeAudio(blob, { onProgress } = {}) {
   const noteEvents = bp.noteFramesToTime(bp.outputToNotesPoly(frames, onsets, 0.25, 0.25, 5));
 
   const notes = noteEvents
-    .filter((ev) => ev.pitch >= 21 && ev.pitch <= 108 && ev.endSeconds > ev.startSeconds)
+    .filter((ev) => ev.pitchMidi >= 21 && ev.pitchMidi <= 108 && ev.durationSeconds > 0.02)
     .map((ev) => ({
-      m: ev.pitch,
-      start: ev.startSeconds,
-      dur: Math.max(0.08, (ev.endSeconds ?? ev.startSeconds + 0.3) - ev.startSeconds - 0.02),
+      m: ev.pitchMidi,
+      start: ev.startTimeSeconds,
+      dur: Math.max(0.08, ev.durationSeconds - 0.02),
       vel: Math.max(30, Math.min(112, Math.round(40 + 80 * (ev.amplitude ?? 0.6)))),
     }))
-    .sort((a, b) => a.start - b.start);
+    .sort((a, b) => a.start - b.start || a.m - b.m);
 
   const duration = notes.reduce((d, n) => Math.max(d, n.start + n.dur), 0);
-  return { bpm: bpModule?.bpmGuess ?? guessBpm(notes), notes, duration };
+  return { bpm: guessBpm(notes), notes, duration, audioDuration: mono22050.duration };
 }
 
 function guessBpm(notes) {

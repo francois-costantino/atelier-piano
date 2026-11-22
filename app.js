@@ -348,7 +348,7 @@ async function doTranscribe() {
       },
     });
     if (!result.notes.length) {
-      setStatus('Aucune note détectée — audio trop faible ou instrument non reconnu.', 'err');
+      setStatus(`Aucune note détectée (audio : ${(result.audioDuration ?? 0).toFixed(1)} s). Vérifiez que le son du piano a bien été capté pendant l'enregistrement.`, 'err');
       return;
     }
     setPiece({ name, bpm: result.bpm, notes: result.notes, duration: result.duration, source: 'transcription' });
