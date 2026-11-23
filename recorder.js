@@ -1,5 +1,5 @@
 // recorder.js — enregistrement micro / import fichier puis transcription Basic Pitch (100% navigateur).
-// Modèle https://github.com/spotify/basic-pitch (Apache 2.0), chargé depuis le CDN jsDelivr au premier usage.
+// Modèle Basic Pitch https://www.npmjs.com/package/@spotify/basic-pitch (Apache 2.0), chargé depuis le CDN jsDelivr au premier usage.
 
 const BP_VERSION = '1.0.1';
 const TF_VERSION = '3.21.0';
